@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skyblock Trade Lite</title>
+<style>
+/* Basic Reset */
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial, sans-serif; }
+body { background:#0f172a; color:white; line-height:1.4; }
+
+/* HEADER */
+.header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 20px;
+    background:#1e293b;
+    border-radius:0 0 10px 10px;
+}
+.header-left { display:flex; align-items:center; gap:10px; font-weight:bold; font-size:14px; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.header-right .menu-dots { font-size:20px; cursor:pointer; user-select:none; }
+
+/* SEARCH BAR */
+.search-row {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin:15px;
+}
+.search-row input { width:60%; padding:6px 10px; border-radius:5px; border:none; background:#1e293b; color:white; font-size:12px; }
+.search-row button { padding:6px 12px; border:none; border-radius:5px; background:limegreen; color:black; cursor:pointer; font-size:12px; }
+
+/* WELCOME TEXT */
+.welcome-text { text-align:center; margin:10px; }
+.welcome-text h2 { font-size:18px; }
+
+/* PANELS */
+.main { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; padding:10px; }
+.panel { background:#1e293b; padding:10px; border-radius:10px; width:260px; box-shadow:0 0 10px rgba(0,255,255,0.2); display:flex; flex-direction:column; gap:8px; }
+.panel h3 { text-align:center; margin-bottom:5px; font-size:16px; }
+
+/* GRID SLOTS */
+.grid { display:grid; grid-template-columns: repeat(4,1fr); gap:5px; }
+select { width:100%; height:50px; border-radius:5px; border:none; background:#0f172a; color:yellow; text-align:center; font-size:12px; cursor:pointer; font-weight:bold; }
+select option:hover { background:#222f44; }
+
+/* CENTER RESULT BOX */
+.center-box { text-align:center; margin-top:20px; }
+.center-box h2 { margin-bottom:5px; font-size:18px; }
+#result { font-size:24px; font-weight:bold; margin:5px 0; }
+#diffInfo { font-size:14px; color:#ccc; margin-top:5px; }
+
+/* TOTALS IN PANEL */
+.total { text-align:center; margin-top:8px; font-size:14px; }
+
+/* FOOTER */
+.footer { text-align:center; margin:20px; font-size:12px; color:gray; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+/* RESULT COLORS */
+.win { color:lime; }
+.lose { color:red; }
+.fair { color:orange; }
+
+/* RESPONSIVE */
+@media(max-width:700px){
+    .main { flex-direction:column; align-items:center; }
+    .grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="header-left">🏠 AAYUzBG</div>
+    <div class="header-right">
+        <!-- LOGIN BUTTON REMOVED -->
+        <div class="menu-dots">⋮</div>
+    </div>
+</div>
+
+<!-- SEARCH ROW -->
+<div class="search-row">
+    <input type="text" id="searchInput" placeholder="Search items...">
+    <button>√</button>
+</div>
+
+<!-- WELCOME TEXT -->
+<div class="welcome-text">
+    <h2>WELCOME SKYBLOCK TRADERS</h2>
+</div>
+
+<!-- MAIN PANELS -->
+<div class="main">
+
+    <!-- LEFT PANEL -->
+    <div class="panel">
+        <h3>Your Items</h3>
+        <div class="grid" id="yourSlots"></div>
+        <div class="total" id="yourTotal">Total: 0M</div>
+    </div>
+
+    <!-- CENTER RESULT -->
+    <div class="center-box">
+        <h2>⚖️ Trade Result</h2>
+        <div id="result">---</div>
+        <div id="diffInfo">Difference: 0M</div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel">
+        <h3>Other Items</h3>
+        <div class="grid" id="otherSlots"></div>
+        <div class="total" id="otherTotal">Total: 0M</div>
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    <div>Contact</div>
+    <div>Privacy</div>
+    <div>Support</div>
+</div>
+
+<script>
+// ITEMS
+const items=[
+{name:"Envy Sword", value:650},{name:"Spear of Medusa", value:650},{name:"Scythe of Greed", value:600},
+{name:"Valkyrie Sword", value:580},{name:"Sword of Winter", value:550},{name:"Hammer", value:500},
+{name:"Wrath Sword", value:500},{name:"Mace Sword", value:500},{name:"Ares Spear", value:450},
+{name:"Phoenix Sword", value:450},{name:"Terra Sword", value:400},{name:"Sword of Apollo", value:350},
+{name:"Pride Sword", value:300},{name:"Lust Sword", value:300},{name:"Hades Sword", value:250},
+{name:"Hermes Sword", value:250},{name:"Blue Lightning", value:250},{name:"Judgment Sword", value:250},
+{name:"Mars Spear Sword", value:250},{name:"Gluttony Sword", value:240},{name:"Sword of Sloth", value:240},
+{name:"Hephaestus Sword", value:200},{name:"Mercury Sword", value:200},{name:"Jormu Sword", value:190},
+{name:"Hel Sword", value:180},{name:"Unsealed Trident", value:170},{name:"Sword of Fenrir", value:160},
+{name:"Trident", value:120},{name:"Moon Scythe", value:120},{name:"Old Scythe", value:80}
+];
+
+// CREATE SLOTS
+function createSlots(containerId){
+    const container=document.getElementById(containerId);
+    for(let i=1;i<=4;i++){
+        const select=document.createElement("select");
+        const first=document.createElement("option");
+        first.value=""; first.text="Slot "+i;
+        select.appendChild(first);
+        items.forEach(it=>{
+            const opt=document.createElement("option");
+            opt.value=it.value;
+            opt.text=it.name+" ("+it.value+"M)";
+            select.appendChild(opt);
+        });
+        container.appendChild(select);
+    }
+}
+
+// GET TOTAL
+function getTotal(containerId){
+    const container=document.getElementById(containerId);
+    let sum=0;
+    const selects=container.getElementsByTagName("select");
+    for(let s of selects) sum+=Number(s.value)||0;
+    return sum;
+}
+
+// UPDATE RESULT
+function update(){
+    const yourTotal=getTotal("yourSlots");
+    const otherTotal=getTotal("otherSlots");
+
+    document.getElementById("yourTotal").innerHTML="Total: "+yourTotal+"M";
+    document.getElementById("otherTotal").innerHTML="Total: "+otherTotal+"M";
+
+    const res=document.getElementById("result");
+    const diffInfo=document.getElementById("diffInfo");
+
+    if(yourTotal===0 && otherTotal===0){
+        res.innerHTML="---";
+        res.className="";
+        diffInfo.innerHTML="Difference: 0M";
+        return;
+    }
+
+    const diff=Math.abs(otherTotal - yourTotal);
+
+    if(otherTotal > yourTotal){
+        res.innerHTML="WIN";
+        res.className="win";
+    } else if(otherTotal < yourTotal){
+        res.innerHTML="LOSE";
+        res.className="lose";
+    } else{
+        res.innerHTML="FAIR";
+        res.className="fair";
+    }
+
+    diffInfo.innerHTML=`Difference: ${diff}M`;
+}
+
+// SEARCH
+document.getElementById("searchInput").addEventListener("input",(e)=>{
+    const filter=e.target.value.toLowerCase();
+    const selects=[...document.querySelectorAll("select")];
+    selects.forEach(sel=>{
+        [...sel.options].forEach(opt=>{
+            opt.style.display=opt.text.toLowerCase().includes(filter)?"":"none";
+        });
+    });
+});
+
+// INIT
+createSlots("yourSlots");
+createSlots("otherSlots");
+document.addEventListener("change",update);
+</script>
+
+</body>
+</html>
